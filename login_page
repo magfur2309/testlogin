@@ -1,0 +1,32 @@
+import streamlit as st
+import hashlib
+from supabase_config import get_supabase_client
+
+supabase = get_supabase_client()
+
+def login_page():
+    st.title("Login Convert PDF FP To Excel")
+
+    with st.form("login_form"):
+        username = st.text_input("Username", placeholder="Masukkan username Anda")
+        password = st.text_input("Password", type="password", placeholder="Masukkan password Anda")
+        submit_button = st.form_submit_button("Login")
+
+    if submit_button:
+        # Hash password untuk pencocokan
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        
+        # Ambil data user dari Supabase
+        response = supabase.table("users").select("id, username, password, role").eq("username", username).execute()
+        
+        if response.data:
+            user = response.data[0]
+            if user["password"] == hashed_password:
+                st.session_state["logged_in"] = True
+                st.session_state["username"] = username
+                st.session_state["role"] = user["role"]
+                st.success(f"Login berhasil! Selamat Datang {username}")
+            else:
+                st.error("Password salah")
+        else:
+            st.error("Username tidak ditemukan")
